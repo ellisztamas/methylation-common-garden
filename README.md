@@ -9,10 +9,9 @@ Paths in this README refer either to relative paths within this repository, or e
 ## Table of contents
 
 1. [Experimental set up](#experimental-set-up)
-	1. [Screening](#screening)
-	2. [Phenotypes](#phenotypes)
-	3. [Analysis](#analysis)
-3. [Data files](#data-files)
+3. [Data](#data-files)
+    * [Field data](#field-data)
+    * [Sequencing data](#sequencing-data)
 4. [Dependencies](#dependencies)
 5. [Author information](#author-information)
 
@@ -31,19 +30,19 @@ Notes kept on *eLabJournal* about this projects are [here](https://vbc.elabjourn
 
 A table explaining what samples were collected in the field is given in `/001.data/001.raw/common_garden_genotyping_master_list.csv`. I inherited this from google drive, and it appears to have been written by the field sampling team. I couldn't find an explicit explanation of the columns, but I think they are:
     
-    1. label: Unique identifier for each plant sampled. Use this to link up plants with sequencing data.
-    2. tubes: I don't know what this is.
-    3. tray: Tray ID from Daniele's experiment
-    4. position: row and column of the plant witin the tray, separated by a dot (trays have 11 rows and 6 columns)
-    5. observations_for_sampling: Note taken about the sample
-    6. Site: Experimental site
-    7. Location: Region of the experimental site.
-    8. original: I don't know what this is.
-    9. score.x: I don't know what this is.
-    10. set: I don't know what this is.
-    11. lines: Numerical accession code.
-    12. name: Long-format accession name
-    13. region: Region of Sweden from which the accession originates.
+1. label: Unique identifier for each plant sampled. Use this to link up plants with sequencing data.
+2. tubes: I don't know what this is.
+3. tray: Tray ID from Daniele's experiment
+4. position: row and column of the plant witin the tray, separated by a dot (trays have 11 rows and 6 columns)
+5. observations_for_sampling: Note taken about the sample
+6. Site: Experimental site
+7. Location: Region of the experimental site.
+8. original: I don't know what this is.
+9. score.x: I don't know what this is.
+10. set: I don't know what this is.
+11. lines: Numerical accession code.
+12. name: Long-format accession name
+13. region: Region of Sweden from which the accession originates.
 
 For phenotypic data collected from these experiments, please see Daniele Filiault's main project about this experiment at `/groups/nordborg/projects/field_experiments/`.
 
@@ -82,19 +81,30 @@ CHECK THESE ONCE SNPMATCH IS DONE!
 
 #### Processed sequencing data
 
-Each sequencing plate has a script in `/003.scripts/001.sequencing_plates/` detailing the processing steps that were performed, and a folder in `/001.data/002.processed/` containing the output of those steps.
+The following steps to process raw reads are carried out:
 
-* Methylseq
-* Genotype calls
-    * We had to change [line 80](https://github.com/Gregor-Mendel-Institute/nf-haplocaller/blob/5c78ec474d728a277eebc2bd8b365bb5841155f7/snps_bsseq.nf#L80) from:
+1. Rahul Pisupati's fork of the [methylseq](https://github.com/rbpisupati/methylseq) pipeline to process bam files into methylation calls.
+2. [nf-haplocaller](https://github.com/Gregor-Mendel-Institute/nf-haplocaller) to call genotypes based on a matrix of known variable sites
+    * Note: We had to change [line 80](https://github.com/Gregor-Mendel-Institute/nf-haplocaller/blob/5c78ec474d728a277eebc2bd8b365bb5841155f7/snps_bsseq.nf#L80) from:
     ```python $workflow.projectDir/scripts/epidiverse_change_sam_queries.py```
     to
     ```/users/thomas.ellis/.conda/envs/snpcall/bin/python $workflow.projectDir/scripts/epidiverse_change_sam_queries.py```
-* SNPmatch
-* Average methylation levels
+    because conda was calling python from outside the conda environment. This needs fixing.
+* [SNPmatch](https://github.com/Gregor-Mendel-Institute/SNPmatch) to compare genotypes to the 1001 genomes database to check plants are what we think they should be. I used the [nextflow pipeline](https://github.com/rbpisupati/nf-snpmatch) to run SNPmatch on each sample.
+* The function `call-methylation-state` from [methylpy](https://github.com/yupenghe/methylpy) to generate `.allc` files for each sample. 
+
+Each of these steps has a folder in `/003.scripts/` detailing what was done to each sequencing plate. These operate on the VBC-cluster node `scratch-cbe` for speed, and copy the output to `/001.data/002.processed/`.
 
 ## Dependencies
 
+### Processing raw reads
+
+* [methylseq](https://github.com/rbpisupati/methylseq)
+* [nf-haplocaller](https://github.com/Gregor-Mendel-Institute/nf-haplocaller)
+* [Nextflow pipeline for SNPmatch](https://github.com/rbpisupati/nf-snpmatch)
+* [methylpy](https://github.com/yupenghe/methylpy)
+
+### R
 This project uses `renv` to ensure package versions match between machines. Open the project file `virus_resistance.Rproj` in the root directory of this project into RStudio (it won't work through the terminal!) and run `renv::refresh()`, and `renv` should automatically set up a local environment with the same package versions as were used to create the results. See the very good documentation on `renv` for more: https://rstudio.github.io/renv/articles/renv.html.
 
 ## Author information
