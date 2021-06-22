@@ -23,7 +23,7 @@ mkdir -p $OUT
 # Run nextflow
 nextflow run ~/methylseq/main.nf \
 -profile cbe,singularity \
---input "$DATA/plate*/*.bam" \
+--input "$DATA/*/*.bam" \
 --fasta $ref_genome \
 --outdir $MSEQ \
 --umeth "ChrC:" \

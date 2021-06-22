@@ -18,7 +18,7 @@ MSEQ=$DIR/001.methylseq
 # Matrix of known SNP positions. This means SNPs do not need to be called on the the bisulphite data
 KNOWN_SITES=$PROJ/001.data/001.raw/known_sites.tsv.gz
 # Folder with the database files for SNPmatch
-DB=$PROJ/001.data/001.raw/002.snpmatch
+DB=$PROJ/001.data/001.raw/003.snpmatch
 
 # Where to save the output
 CALLS=$DIR/genotype_calls

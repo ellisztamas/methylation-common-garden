@@ -4,7 +4,9 @@
 #SBATCH --mem=5GB
 #SBATCH --output=./003.scripts/unzip_raw_bams.log
 #SBATCH --qos=medium
-#SBATCH --time=12:00:00
+#SBATCH --time=24:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks=8
 
 ml samtools/1.9-foss-2018b
 
@@ -19,8 +21,11 @@ DIR=/scratch-cbe/users/thomas.ellis
 RAW=$PROJ/001.data/001.raw/001.raw_reads
 
 # Where to save the output
-DATA=$DIR/data # where to unzip raw reads
+DATA=$DIR/002.unzipped_raw_bams # where to unzip raw reads
+OUT=001.data/001.raw/ # where to copy the data when finished
+
 mkdir -p $DATA
+mkdir -p $OUT
 
 # Unzip raw data
 # Plate 144
@@ -55,10 +60,12 @@ unzip -n $zipfile -d $DATA
 mkdir -p $DATA/167
 d1=($DATA/HKKWJDRXX_20200415B_demux_1_R9456/*115306*bam)
 d2=($DATA/HKKWJDRXX_20200415B_demux_2_R9456/*115306*bam)
+
 for index in ${!d1[*]}; do 
   samtools merge --threads 4 $DATA/167/`basename ${d1[$index]}` ${d1[$index]} ${d2[$index]}
 done
 cp $DATA/HKKWJDRXX*/*barcodes.json $DATA/167
+
 # Plate 168 has the code 128708
 mkdir -p $DATA/168
 d1=($DATA/HMYF5DRXX_20200928B_demux_1_R10191/*128708*bam)
@@ -67,6 +74,7 @@ for index in ${!d1[*]}; do
   samtools merge --threads 4 $DATA/168/`basename ${d1[$index]}` ${d1[$index]} ${d2[$index]}
 done
 cp $DATA/HMYF5DRXX_20200928B_demux_*/*barcodes.json $DATA/168
+
 # Plate 169 has the code 128709
 mkdir -p $DATA/169
 d1=($DATA/HMYF5DRXX_20200928B_demux_1_R10191/*128709*bam)
@@ -75,3 +83,5 @@ for index in ${!d1[*]}; do
   samtools merge --threads 4 $DATA/169/`basename ${d1[$index]}` ${d1[$index]} ${d2[$index]}
 done
 cp $DATA/HMYF5DRXX_20200928B_demux_*/*barcodes.json $DATA/169
+
+stage $DATA $OUT

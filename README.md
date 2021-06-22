@@ -1,7 +1,5 @@
 # Methylation variation in common garden experiments
 
-Tom Ellis
-
 A project investigating the genetic, environmental, and GxE components of methylation variation in *Arabidopsis thaliana* plants grown in common garden experiments in Sweden.
 
 Paths in this README refer either to relative paths within this repository, or else to absolute paths in the GMI high-performance-computing cluster.
@@ -50,59 +48,49 @@ For phenotypic data collected from these experiments, please see Daniele Filiaul
 
 There are two sequencing datasets, which overlap:
 
-1. **Intensive sample** ([plates 144 and 145](https://docs.google.com/spreadsheets/d/1gX_zYZMaFUk6SMOYTfcjOlv9Mv5vv6ksmSUq_iSSVnU/edit#gid=0))
+1. **Intensive sample** (mostly [plates 144 and 145](https://docs.google.com/spreadsheets/d/1gX_zYZMaFUk6SMOYTfcjOlv9Mv5vv6ksmSUq_iSSVnU/edit#gid=0))
     * 12 accessions from all four sites, using as many replicates per accession per site as were available.
     * This is intended to allow us to partition variance in matheylation into genetic, enviromental, GxE and residual-noise components.
     * This was done before I arrived, so see Ilka's note at `006.reports/001.notes_from_google_drive/Experimental setup.docx`.
-2. **Extensive sample** ([plates 167 to 171](https://docs.google.com/spreadsheets/d/1gX_zYZMaFUk6SMOYTfcjOlv9Mv5vv6ksmSUq_iSSVnU/edit#gid=0))
+2. **Extensive sample** (mostly [plates 167 to 171](https://docs.google.com/spreadsheets/d/1gX_zYZMaFUk6SMOYTfcjOlv9Mv5vv6ksmSUq_iSSVnU/edit#gid=0))
     * 1 replicate per accession per site at Adal and Rathkegården only for each of all 200 accessions.
     * This is intended as a panel for mapping genetic variants associated with methylation.
     * See notes on [*eLabJournal*](https://vbc.elabjournal.com/members/experiments/browser/#view=experiment&nodeID=227439) for how I did this.
 
+22/07/2021: Going through the sequence data again I found some discrepancies between the genotypes on the plates and what SNPmatch told me:
+
+1. For plate 167 it seems that I plated rows in the wrong order (H to A instead of A to H) for rows 2-5 and 8-12.
+2. For plate 169 I plated every row from H-A instead of A-H.
+
+I corrected the position labels in `001.data/003.plating_files/sequencing_plates.csv`, so there will be a discrepancy with the group NGS master list.
+
 #### Raw bisulphite data
 
-Raw data are currently in `/groups/nordborg/projects/nordborg_rawdata/Athaliana/bisulfite_seq/field_data_from_2012` but will need moving to `/groups/nordborg/raw.data` at some point.
+Raw data are currently in `/groups/nordborg/projects/nordborg_rawdata/Athaliana/bisulfite_seq/field_data_from_2012` but will need moving to `/groups/nordborg/raw.data` at some point. See `003.scripts/001.unzip_raw_bams.sh` for which zip file is which and how they are processed.
 
-* Plate 144 is divided into four files:
-    * CDN24ANXX_2_M8584.zip
-    * CDN24ANXX_3_M8585.zip
-    * CDN24ANXX_4_M8587.zip
-    * CDN24ANXX_5_M8588.zip
-* Plate 145 is divided into four files:
-    * CDN2BANXX_1_M8246.zip
-    * CDN2BANXX_4.zip
-    * CDN2BANXX_5.zip
-    * CDN2BANXX_6.zip
-* Plate 167: `elxRjzjh9h-HKKWJDRXX_20200415B_demux_2_R9456.zip`
-* Plate 168: `anQaf5Iadx-HMYF5DRXX_20200928B_demux_1_R10191.zip`
-* Plate 169: `Tjpak3IDx6-HMYF5DRXX_20200928B_demux_2_R10191.zip`
-
-CHECK THESE ONCE SNPMATCH IS DONE!
+ Plates 167, 168 and 169 were run on a NovaSeq machine, which means reads are split over two zip files because of some kind of NovaSeq voodoo:
+ 
+ * Plate 167 has a mixture of files for this project, and some for Alexandra Kornienko; my sequeneces have the code 115306.
+ * Plates 168 and 169 came as two zip files; files for plate 168 have code 128708 in their file names, and those for 169 have code 128709.
 
 #### Processed sequencing data
 
-The following steps to process raw reads are carried out:
+The following steps to process raw reads are carried out. See scripts in `003.scripts` for details. These operate on the VBC-cluster node `scratch-cbe` for speed, and results are copied to the project folder.
 
-1. Rahul Pisupati's fork of the [methylseq](https://github.com/rbpisupati/methylseq) pipeline to process bam files into methylation calls.
-    * Scripts are in `/003.scripts/003.snpmatch/`.
-    * Output is saved to `/001.data/002.processed/001.methylseq/`.
-2. * The function `call-methylation-state` from [methylpy](https://github.com/yupenghe/methylpy) to generate `.allc` files for each sample.
-    * Scripts are in `/003.scripts/002.allc/`
-    * Output is in `/001.data/002.processed/002.allc/`.
+1. Rahul Pisupati's fork of the [methylseq](https://github.com/rbpisupati/methylseq) pipeline to process bam files into methylation calls.Output is saved to `/001.data/002.processed/001.methylseq/`.
+2. * The function `call-methylation-state` from [methylpy](https://github.com/yupenghe/methylpy) to generate `.allc` files for each sample Output is in `/001.data/002.processed/002.allc/`.
 3. [nf-haplocaller](https://github.com/Gregor-Mendel-Institute/nf-haplocaller) to call genotypes based on a matrix of known variable sites
     * Note: We had to change [line 80](https://github.com/Gregor-Mendel-Institute/nf-haplocaller/blob/5c78ec474d728a277eebc2bd8b365bb5841155f7/snps_bsseq.nf#L80) from:
     ```python $workflow.projectDir/scripts/epidiverse_change_sam_queries.py```
     to
     ```/users/thomas.ellis/.conda/envs/snpcall/bin/python $workflow.projectDir/scripts/epidiverse_change_sam_queries.py```
-    because conda was calling python from outside the conda environment. This needs fixing.
-    * Scripts are in `/003.scripts/003.genotype_calls/`.
-    * Output is only used for SNPmatch, so I didn't save it.
-* [SNPmatch](https://github.com/Gregor-Mendel-Institute/SNPmatch) to compare genotypes to the 1001 genomes database to check plants are what we think they should be.
-    * I used the [nextflow pipeline](https://github.com/rbpisupati/nf-snpmatch) to run SNPmatch on each generated by `nf-haplocaller`.
-    * Scripts are in `/003.scripts/004.snpmatch/`.
-    * Output is saved to `/004.output/001.snpmatch`
- 
-Each of these steps has a folder in `/003.scripts/` detailing what was done to each sequencing plate. These operate on the VBC-cluster node `scratch-cbe` for speed, and results are copied to the project folder.
+    because conda was calling python from outside the conda environment. This needs fixing. Output is only used for SNPmatch, so I didn't save it.
+* [SNPmatch](https://github.com/Gregor-Mendel-Institute/SNPmatch) to compare genotypes to the 1001 genomes database to check plants are what we think they should be. I used the [nextflow pipeline](https://github.com/rbpisupati/nf-snpmatch) to run SNPmatch on each generated by `nf-haplocaller`. Output is saved to `/004.output/001.snpmatch`.
+4. **Lining up sequences with sample IDs** is done partially in `003.scripts/004.get_plate_positions.py` which lines up `.bam` file names with the sequence-plate file and the field-collection master list. This was difficult to do programatically because some of the meta-data had been deleted from the NGS master list, so I manually lined up plate 145. A couple of caveats about this process:
+    1. For plates 167 and 169 it seems I swapped the order of rows; more [here](#sequencing-data)
+    2. Plate 145 was sequenced as three batches of 24 samples, because we couldn't sequence 96 bisulphite samples in parallel at the time. They have a confusing set of [barcode indices](https://docs.google.com/spreadsheets/d/1TI9wWU2aYMrvH0-jZjQ9gGqceYwQ1w8qbHFGqrQrBKM/edit#gid=1695237440) with no obvious way to link plate position to sample ID programatically, so I had to do this by hand.
+        - As far as I can tell, there are 24 codes from 701 to 727, which repeat as columns 1-3, 4-6, 7-9 and 9-12 of a plate (see the [indexes](https://docs.google.com/spreadsheets/d/1TI9wWU2aYMrvH0-jZjQ9gGqceYwQ1w8qbHFGqrQrBKM/edit#gid=1695237440) on the group google drive).
+        - The first 16 codes make sense, but it seems that the last column should be codes {723-727} and then {719-722} and not the other way around, as suggested by the index file.
 
 ## Dependencies
 
