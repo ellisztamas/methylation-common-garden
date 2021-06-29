@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+# 
+# Tom Ellis
+# Script to unzip each raw data file to the `scratch-cbe` drive
+# on the VBC cluster.
+# Reads for plates run on a NovaSeq machine are split across two BAM
+# files, so for those plates reads are combined using samtools.
 
 # SLURM
 #SBATCH --mem=5GB
@@ -8,6 +14,9 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=8
 
+
+
+# Environment
 ml samtools/1.9-foss-2018b
 
 # Reference directories. Change these for your machine.
@@ -21,11 +30,9 @@ DIR=/scratch-cbe/users/thomas.ellis
 RAW=$PROJ/001.data/001.raw/001.raw_reads
 
 # Where to save the output
-DATA=$DIR/002.unzipped_raw_bams # where to unzip raw reads
-OUT=001.data/001.raw/ # where to copy the data when finished
+DATA=$PROJ/001.data/001.raw/002.unzipped_raw_bams # where to unzip raw reads
 
 mkdir -p $DATA
-mkdir -p $OUT
 
 # Unzip raw data
 # Plate 144
@@ -83,5 +90,3 @@ for index in ${!d1[*]}; do
   samtools merge --threads 4 $DATA/169/`basename ${d1[$index]}` ${d1[$index]} ${d2[$index]}
 done
 cp $DATA/HMYF5DRXX_20200928B_demux_*/*barcodes.json $DATA/169
-
-stage $DATA $OUT

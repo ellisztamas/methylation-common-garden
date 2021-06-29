@@ -1,3 +1,9 @@
+# Tom Ellis May-June 2021
+# Commands to run the methylseq pipeline on unaligned BAM files on the 
+# VBC cluster. This assumes you have previously unzipped those files using
+# `003.scripts/001.unzip_raw_bams.sh`.
+# See https://github.com/yupenghe/methylpy for pipeline details.
+
 ml nextflow/21.02.0-edge
 
 # Reference directories. Change these for your machine.
@@ -9,7 +15,7 @@ DIR=/scratch-cbe/users/thomas.ellis
 # Where the data are
 # Reference genome
 ref_genome=$PROJ/001.data/001.raw/TAIR10_wholeGenome.fasta
-DATA=$DIR/data # where unzipped reads are saved
+DATA=$PROJ/001.data/001.raw/002.unzipped_raw_bams/ # where unzipped reads are saved
 
 # Where to save the output
 WORK=$DIR/000.work/001.methylseq # Nextflow working directory
@@ -32,7 +38,7 @@ nextflow run ~/methylseq/main.nf \
 --relax_mismatches \
 --num_mismatches 0.5 \
 --file_ext bam \
--w $WORK \
--resume
+-w $WORK
+# -resume
 # Copy these results to the permanent projects folder
 stage $MSEQ $OUT

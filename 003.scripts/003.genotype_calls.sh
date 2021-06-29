@@ -1,6 +1,18 @@
 # Tom Ellis, May 2021
-# Commands to run the nextflow SNPmatch pipeline on each sample.
-# See https://github.com/rbpisupati/nf-snpmatch
+# Commands to run the nextflow haplocaller pipeline on each sample to
+# call genotypes from bisulphite data. SNP postions are not called 
+# afresh from BS data, but reads are compared to a known SNP matrix.
+#
+# In many cases, one allele was not present in the reference matrix,
+# which led to weird results later on. To circumvent this, samples 
+# are lumped into a single VCF file and observed nucleotides are used.
+# This prevents SNPmatch thinking everthing in Columbia.
+#
+# See https://github.com/Gregor-Mendel-Institute/nf-haplocaller for
+# pipeline information.
+#
+# It is assumed that you have previously run the methylseq pipeline
+# on unaligned BAM files; see `003.scripts/002.methylseq.sh`
 
 ml nextflow/21.02.0-edge
 
@@ -22,31 +34,17 @@ DB=$PROJ/001.data/001.raw/003.snpmatch
 
 # Where to save the output
 CALLS=$DIR/genotype_calls
-MATCH=$DIR/001.snpmatch
-OUT=$PROJ/004.output
 
 mkdir -p $CALLS
 mkdir -p $DIR/work/genotype_calls
-mkdir -p $DIR/work/snpmatch
-mkdir -p $MATCH
-mkdir -p $OUT
 
 # Run the genotype calling pipeline
+# Argument `cohort` tells the pipeline to lump samples together and use observed SNPs
 nextflow run ~/nf-haplocaller/snps_bsseq.nf \
 --input "$MSEQ/bismark_deduplicated/*.bam" \
 --fasta $ref_genome \
 --outdir $CALLS \
+--cohort calls \
 -w $DIR/work/genotype_calls \
 --known-sites $KNOWN_SITES \
 -profile conda
-
-# Run the pipeline
-nextflow run ~/nf-snpmatch/main.nf \
---func "inbred" \
---input "${CALLS}/variants_bcftools/*.vcf.gz" \
---outdir $MATCH \
---db $DB/1135g_SNP_BIALLELIC.hetfiltered.snpmat.6oct2015.hdf5 \
---db_acc $DB/1135g_SNP_BIALLELIC.hetfiltered.snpmat.6oct2015.acc.hdf5 \
--w $DIR/work/snpmatch
-
-stage $MATCH $OUT
