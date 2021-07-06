@@ -103,6 +103,7 @@ assert sample_csv['plate'].isin(['144', '145', '167', '168', '169']).all()
 sample_csv.\
 merge(snp_match, how="right", left_index=True, right_index=True).\
 filter(items = ['row_id','seqlane_id', 'plate', 'ROW', 'COL', 'TopHitAccession','NextHit', 'ThirdHit', 'Score']).\
+reset_index().rename(columns = {'index' : 'file'}).\
 merge(
     master_list,
     how = 'left',
@@ -110,9 +111,9 @@ merge(
 ).\
 sort_values(['plate', 'seqlane_id', 'COL', 'ROW']).\
 assign(match = lambda x: (x.lines == x.TopHitAccession) | (x.lines == x.NextHit) | (x.lines == x.ThirdHit)).\
-to_csv("004.output/manually_check_snpmatch_results.csv")
+to_csv("004.output/manually_check_snpmatch_results_tmp.csv")
 
-# Create a seprate file for plate 145 to be edited manually.
-master_list.loc[master_list['plate'] == '145'].\
-sort_values(['col', 'row']).\
-to_csv("004.output/plate145.csv", index=False)
+# # Create a seprate file for plate 145 to be edited manually.
+# master_list.loc[master_list['plate'] == '145'].\
+# sort_values(['col', 'row']).\
+# to_csv("004.output/plate145.csv", index=False)

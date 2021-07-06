@@ -28,7 +28,7 @@ ALLC='001.data/002.processed/001.methylseq/methylpy/'
 OUT='001.data/002.processed/mean_mC_genome_wide.csv'
 
 # Create an empty file with a header
-echo "file,CG,CHG,CHH" > $OUT
+echo "file,CG,CHG,CHH,coverage" > $OUT
 
 FILES=($ALLC/'allc_*.tsv.gz')
 for f in $FILES; do
@@ -36,3 +36,7 @@ for f in $FILES; do
   --input $f \
   --output $OUT
 done
+
+# python3 002.library/python/weighted_mean_mC_from_allc.py \
+# --input $ALLC/allc_HMYF5DRXX_1#128709_TAGGCATGCGCTAGAG.tsv.gz \
+# --output $OUT
