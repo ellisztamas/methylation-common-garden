@@ -1,0 +1,315 @@
+---
+title: "Methylation in common garden experiments: data exploration"
+author: "Tom Ellis"
+date: "05/07/2021"
+output: 
+  html_document:
+    toc: yes
+    toc_float: true
+number_sections: true
+theme: lumen
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library("tidyverse")
+library("ggpubr")
+```
+
+# Background
+
+Fernando, Polina and Manu collected tissue from plants in Daniele's common garden experiments at four sites in Sweden. We would like to use these data to examine methylation variation among plants grown under field conditions, and to partition the variation in methylation into environmental and genetic components.
+
+At present we have done bisulphite sequencing for four sequencing plates covering:
+
+1. 12 accessions sampled with as many replicates as we have tissue for from all four sites (mostly plates 144 and 145).
+2. One recpliate from all accessions from Rathkegården and Adal for mapping genes.
+
+At the same time, Rahul has data from his crosses at two temperatures that suggest batch effects on CHH methylation, which could be due to:
+
+1. Mixing up samples
+2. Something weird during tissue harvest
+3. Something weird during sample preparation
+4. Microenvironmental variation while the plants were growing.
+
+This report explores possible sources of variation in the common-garden data. I have excluded one sample (sample 831 from Adal) because it seems to have methylations levels > 0.94, which I don't believe.
+
+```{r import-data}
+# Import genome-wide average methylation levels for each sample
+source("003.scripts/008.format_phenotypes.R")
+mean_mC <- mean_mC %>% 
+  filter(CHH < 0.8)
+
+# Ad a column indicating sampling date
+collection_dates <- list(
+  data.frame(sampling_date = '14.10.2012', id =    1:212),
+  data.frame(sampling_date = '15.10.2012', id =  213:421),
+  data.frame(sampling_date = '17.10.2012', id =  422:703),
+  data.frame(sampling_date = '18.10.2012', id =  704:1143),
+  data.frame(sampling_date = '19.10.2012', id = 1144:1670),
+  data.frame(sampling_date = '20.10.2012', id = 1671:2008),
+  data.frame(sampling_date = '06.11.2012', id = 2010:2588),
+  data.frame(sampling_date = '07.11.2012', id = 2589:3164),
+  data.frame(sampling_date = '08.11.2012', id = 3165:3618),
+  data.frame(sampling_date = '09.11.2012', id = 3619:4081)
+) %>% 
+  do.call(what = 'rbind') %>% 
+  mutate(id = as.character(id))
+mean_mC <- mean_mC %>% 
+  left_join(collection_dates, by = 'id')
+
+```
+
+# Possible sources of confounding
+
+## Plate
+
+Distributions for each sequence context mostly overlap. There is a suggestion of increased CHG in plate 168 and right skew in CHH for plate 168.
+
+```{r plate-hists}
+ggarrange(
+  
+  mean_mC %>% 
+    ggplot(aes(x = CG, fill = plate, colour=plate)) + 
+    geom_density(alpha = 0.3),
+  
+  mean_mC %>% 
+    ggplot(aes(x = CHG, fill = plate, colour=plate)) + 
+    geom_density(alpha = 0.3),
+  
+  mean_mC %>% 
+    ggplot(aes(x = CHH, fill = plate, colour=plate)) + 
+    geom_density(alpha = 0.3),
+  
+  ncol=3, common.legend = TRUE
+)
+
+```
+
+Plottng the covariance between sequence types show that the right skew in CHH for plate 167 means the points for that plate fall on a different line to other plates. Plate 167 was a plate for sequencing the broad panel of genotypes for GWAS, but so were plates 168 and 169, so the genetic diversity cannot explain why this plate looks different from the others.
+
+```{r plate-covar}
+ggarrange(
+  mean_mC %>% 
+    ggplot(aes(x = CHH, y = CG, colour=plate)) + 
+    geom_point(),
+  mean_mC %>% 
+    ggplot(aes(x = CHH, y = CHG, colour=plate)) + 
+    geom_point(),
+  mean_mC %>% 
+    ggplot(aes(x = CHG, y = CG, colour=plate)) + 
+    geom_point(),
+  ncol=3, common.legend = TRUE)
+```
+
+Covariance patterns between sequence contexts are clearer when we remove plate 167.
+The correlation is tightest for CHH vs CHG.
+
+```{r plate-covar-no-167}
+ggarrange(
+  mean_mC %>% filter(plate != '167') %>% 
+    ggplot(aes(x = CHH, y = CG, colour=plate)) + 
+    geom_point(),
+  mean_mC %>% filter(plate != '167') %>% 
+    ggplot(aes(x = CHH, y = CHG, colour=plate)) + 
+    geom_point(),
+  mean_mC %>% filter(plate != '167') %>% 
+    ggplot(aes(x = CHG, y = CG, colour=plate)) + 
+    geom_point(),
+  ncol=3, common.legend = TRUE)
+```
+
+## Collection date
+
+Fernando kept [notes](https://drive.google.com/file/d/0B8phRNZ0A24RR1hpdlBZYnFGSVE/view?usp=sharing&resourcekey=0-k84Zg2J6bNaMa9vchXyCuA) on what was collected when. Some guesswork was required to work out what was sampled on 19th and 20th October 2012. There aren't big differences between sampling days, but note the right-hand shoulder for CHH for plants from 20th October.
+
+```{r date-hists}
+ggarrange(
+  
+  mean_mC %>% 
+    ggplot(aes(x = CG, fill = sampling_date, colour=sampling_date)) + 
+    geom_density(alpha = 0.1),
+  
+  mean_mC %>% 
+    ggplot(aes(x = CHG, fill = sampling_date, colour=sampling_date)) + 
+    geom_density(alpha = 0.1),
+  
+  mean_mC %>% 
+    ggplot(aes(x = CHH, fill = sampling_date, colour=sampling_date)) + 
+    geom_density(alpha = 0.1),
+  
+  ncol=3, common.legend = TRUE
+)
+
+```
+
+There is a tendency for samples from 20.10.2012 to crop up as the weird extra group for correlations with CHH.
+
+```{r date-covar}
+ggarrange(
+  mean_mC %>% 
+    ggplot(aes(x = CHH, y = CG, colour=sampling_date)) + 
+    geom_point(),
+  mean_mC %>% 
+    ggplot(aes(x = CHH, y = CHG, colour=sampling_date)) + 
+    geom_point(),
+  mean_mC %>% 
+    ggplot(aes(x = CHG, y = CG, colour=sampling_date)) + 
+    geom_point(),
+  ncol=3, common.legend = TRUE)
+```
+
+Samples from 20th October disproportionately come from plate 167. However there are samples on other plates, so it seems that the effect is coming from plate 167 rather than sampling date.
+
+```{r date-table}
+mean_mC %>% 
+  filter(sampling_date == "20.10.2012") %>% 
+  pull(plate) %>% 
+  table()
+
+```
+
+## Site
+
+Histograms by site overlap more nicely than the previous plots separating plate and sampling date. Note the right-hand skew for CHH for plants grown in Adal.
+
+```{r site-hists}
+ggarrange(
+  
+  mean_mC %>% 
+    ggplot(aes(x = CG, fill = site, colour=site)) + 
+    geom_density(alpha = 0.1),
+  
+  mean_mC %>% 
+    ggplot(aes(x = CHG, fill = site, colour=site)) + 
+    geom_density(alpha = 0.1),
+  
+  mean_mC %>% 
+    ggplot(aes(x = CHH, fill = site, colour=site)) + 
+    geom_density(alpha = 0.1),
+  
+  ncol=3, common.legend = TRUE
+)
+```
+
+When methylation levels are plotted against each other, we see that the separation for CHH vs CHG is strongly associated plants from the Adal site. This makes sense, in that samples in the freezer are arranged by sampling day, which in turn is sorted by the site where the team were collected that day, so it appears that plate 167 happened to end up with a lot of plants from 20th October from Adal.
+
+```{r site-covar}
+ggarrange(
+  mean_mC %>% 
+    ggplot(aes(x = CHH, y = CG, colour=site)) + 
+    geom_point(),
+  mean_mC %>% 
+    ggplot(aes(x = CHH, y = CHG, colour=site)) + 
+    geom_point(),
+  mean_mC %>% 
+    ggplot(aes(x = CHG, y = CG, colour=site)) + 
+    geom_point(),
+  ncol=3, common.legend = TRUE)
+```
+
+## Coverage
+
+There aren't big differences in sequence coverage (of cytosines from the allc files) between plates, dates or sites. Plotting the same for genotypes is a mess, because there are ~200 genotypes, mostly with 1 or 2 samples each.
+
+```{r coverage-boxplot}
+
+ggarrange(
+  mean_mC %>% 
+    ggplot(aes(x = plate, y = coverage)) + 
+    geom_boxplot()+
+    theme(axis.text.x = element_text(angle = 45, hjust=1)),
+  mean_mC %>% 
+    ggplot(aes(x = sampling_date, y = coverage)) + 
+    geom_boxplot() +
+    theme(axis.text.x = element_text(angle = 45, hjust=1)),
+  mean_mC %>% 
+    ggplot(aes(x = site, y = coverage)) + 
+    geom_boxplot() +
+    theme(axis.text.x = element_text(angle = 45, hjust=1)),
+  ncol= 3)
+
+```
+
+Sequence coverage is not obviously correlated with methylation level in any sequence context, although there is heterogeneity in variance of methylation between plates.
+
+```{r coverage-vs-methylation}
+ggarrange(
+  mean_mC %>% 
+    ggplot(aes(x = coverage, y = CG, colour= plate)) + 
+    geom_point(),
+  mean_mC %>% 
+    ggplot(aes(x = coverage, y = CHG, colour= plate)) + 
+    geom_point(),
+  mean_mC %>% 
+    ggplot(aes(x = coverage, y = CHH, colour= plate)) + 
+    geom_point(),
+  ncol=3, common.legend = TRUE
+)
+
+```
+
+# What is going on in plate 167?
+
+## Microenvironmental variation at Adal
+
+We have seen that there is a group of plants with unusually high variance in CHH methylation, which is only apparent when you plot a scatter plot of CHH with other sequence contexts. These plants seem to be from plate 167, but also tend to be from the Adal Site and were collected on 20th October. One explanation for the heteroskedasticity is that there is microenvironemental variation within the experiment causing plants at one end of the site to have higher/lower methylation, and that plants on plate 167 happened to come from those areas. In that case we would expect to see differences in methylation between trays, and overrepresentation of plate-167 samples on certain trays. In reality there aren't big differences between trays (although sample size is limiting) and samples seem to be drawn fairly evenly from across them. Microenvironmental variation does not seem to drive the funny patterns in plate 167.
+
+```{r}
+mean_mC %>% 
+  filter(site == "Adal") %>% 
+  left_join(
+    read_csv(
+      "001.data/003.plating_files/common_garden_genotyping_master_list.csv",
+      col_types = "ccccccccccccc"),
+    by = c("id" = "label")
+  ) %>% 
+  group_by(tray, plate) %>% 
+  summarise(
+    n = n()
+  ) %>% 
+  ggplot(aes(x=tray, y = n, fill=plate)) +
+  geom_col() +
+  labs(
+    y = "Number of samples"
+  )
+```
+
+## Patterns within plate 167
+
+An alternative explanation for increased variance in CHH on plate 167 is that there is some kind of structure within the plate, for example if the plate took a long time to fill you might see increased methylation at one end of the plate. The following plot shows CHH methylation for each of the 12 columns in each sequencing plate. CHH methylation seems somewhat higher overall for plate 167, but there are a columns in particular that have especially high variance, where something may have gone wrong.
+
+```{r}
+mean_mC %>% 
+  # filter(plate %in% c("167", "168", "169")) %>% 
+  left_join(
+    read_csv(
+      "004.output/manually_check_snpmatch_results.csv", col_types = cols()
+    ),
+    by = 'id'
+  ) %>% 
+  ggplot(aes(x = col, y = CHH, group=col)) +
+  geom_boxplot() +
+  facet_grid(~ plate.x)
+```
+
+For completeness here is the plot by row as well. This makes less sense than the previous plot because the plate is filled by column rather than row, so there's no obvious reason for samples in any row to be correlated.
+
+```{r}
+mean_mC %>% 
+  # filter(plate %in% c("167", "168", "169")) %>% 
+  left_join(
+    read_csv(
+      "004.output/manually_check_snpmatch_results.csv", col_types = cols()
+    ),
+    by = 'id'
+  ) %>% 
+  ggplot(aes(x = row, y = CHH, group=row)) +
+  geom_boxplot() +
+  facet_grid(~ plate.x)
+```
+
+
+
+
