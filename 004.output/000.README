@@ -1,0 +1,8 @@
+Folder contains the output from:
+
+1. the methylseq pipeline from `003.scripts/001.methylseq/002.methylseq`.
+2. Files for checking the genotypes are what they should be, and lining up sequences with phenotypes and snpmatch results.
+3. Weighted aveage methylation levels genome-wide and over TEs.
+    - `003.methylation_levels/reads_on_each_TE` come from `003.scripts/003.methylation_levels/002.methylation_on_TEs.sh`
+    - `003.methylation_levels/mean_mC_genome_wide.csv` comes from `003.scripts/003.methylation_levels/001.mean_mC_genome_wide.sh`
+    - `003.methylation_levels/mean_mC_TEs.csv` comes from `003.scripts/003.methylation_levels/003.methylation_on_TEs.sh`

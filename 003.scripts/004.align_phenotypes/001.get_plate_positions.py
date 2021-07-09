@@ -19,7 +19,7 @@ import json
 os.chdir("/users/thomas.ellis/common_gardens/")
 
 # Import SNPmatch results
-snp_match = pd.read_csv("004.output/001.snpmatch/intermediate_modified.csv", dtype=str).\
+snp_match = pd.read_csv("004.output/002.link_samples/001.snpmatch/intermediate_modified.csv", dtype=str).\
 rename(columns = {'Unnamed: 0' : 'file'}).\
 set_index('file')
 # Reformat filenames in SNPmatch results
@@ -116,4 +116,4 @@ to_csv("004.output/manually_check_snpmatch_results_tmp.csv")
 # # Create a seprate file for plate 145 to be edited manually.
 # master_list.loc[master_list['plate'] == '145'].\
 # sort_values(['col', 'row']).\
-# to_csv("004.output/plate145.csv", index=False)
+# to_csv("004.output/002.link_samples/plate145.csv", index=False)

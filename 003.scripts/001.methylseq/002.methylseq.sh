@@ -20,7 +20,7 @@ DATA=$PROJ/001.data/001.sequencing/002.unzipped_bams_bams/ # where unzipped read
 # Where to save the output
 WORK=$DIR/000.work/001.methylseq # Nextflow working directory
 MSEQ=$DIR/001.methylseq # where to output results of the pipeline
-OUT=$PROJ/001.data/002.processed # where to copy the data when finished
+OUT=$PROJ/004.output # where to copy the data when finished
 
 mkdir -p $MSEQ
 mkdir -p $WORK

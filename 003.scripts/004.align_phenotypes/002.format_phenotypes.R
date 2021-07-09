@@ -8,13 +8,13 @@
 library(tidyverse)
 
 mean_mC <- read_csv(
-  "001.data/002.processed/mean_mC_genome_wide.csv",
+  "004.output/003.methylation_levels/mean_mC_genome_wide.csv",
   col_types = 'cdddd'
 ) %>% 
   # remove sufffix and prefixes around file names so they can be matched to other files.
   mutate(file  = str_sub(file, 6, -8)) %>% 
   left_join(
-    read_csv("004.output/manually_check_snpmatch_results.csv", col_types = 'cccccccccdcccccccc'),
+    read_csv("004.output/002.link_samples/manually_check_snpmatch_results.csv", col_types = 'cccccccccdcccccccc'),
     by = 'file'
   ) %>% 
   filter(match %in% c("TRUE", "True", "Fine")) %>% 

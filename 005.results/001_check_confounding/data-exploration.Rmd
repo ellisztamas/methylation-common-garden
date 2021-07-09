@@ -285,7 +285,7 @@ mean_mC %>%
   # filter(plate %in% c("167", "168", "169")) %>% 
   left_join(
     read_csv(
-      "004.output/manually_check_snpmatch_results.csv", col_types = cols()
+      "004.output/002.link_samples/manually_check_snpmatch_results.csv", col_types = cols()
     ),
     by = 'id'
   ) %>% 
@@ -301,7 +301,7 @@ mean_mC %>%
   # filter(plate %in% c("167", "168", "169")) %>% 
   left_join(
     read_csv(
-      "004.output/manually_check_snpmatch_results.csv", col_types = cols()
+      "004.output/002.link_samples/manually_check_snpmatch_results.csv", col_types = cols()
     ),
     by = 'id'
   ) %>% 
