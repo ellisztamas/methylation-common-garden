@@ -2,7 +2,7 @@
 
 # SLURM
 #SBATCH --job-name=mean_mC_jobarray
-#SBATCH --output=mean_mC_jobarray.log
+#SBATCH --output=mean_mC_genome_wide.log
 #SBATCH --mem-per-cpu=5GB
 #SBATCH --qos=medium
 #SBATCH --time=12:00:00
@@ -12,6 +12,9 @@
 # SLURM script to calculate weighted-mean methylation levels in CG, 
 # CHG and CHH sequence contexts for a folder of allc files generated
 # by the methylpy pipeline.
+# 
+# Methylation is calculated for both autosomes and organelles
+# (mitochondria and chloroplasts).
 #
 # This loops over each allc file, calculates numbers, and sends them
 # to an output summary file. This would be faster as a job array, but 
@@ -28,7 +31,7 @@ ALLC='001.data/002.processed/001.methylseq/methylpy/'
 OUT='001.data/002.processed/mean_mC_genome_wide.csv'
 
 # Create an empty file with a header
-echo "file,CG,CHG,CHH,coverage" > $OUT
+echo "file,chr_type,CG,CHG,CHH,coverage" > $OUT
 
 FILES=($ALLC/'allc_*.tsv.gz')
 for f in $FILES; do

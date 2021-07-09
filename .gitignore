@@ -1,5 +1,6 @@
 .nextflow*
 001.data/**
+004.output/*.snpmatch/*
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,r,jupyternotebooks,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,r,jupyternotebooks,visualstudiocode
