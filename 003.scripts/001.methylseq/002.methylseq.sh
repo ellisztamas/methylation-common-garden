@@ -1,7 +1,7 @@
 # Tom Ellis May-June 2021
 # Commands to run the methylseq pipeline on unaligned BAM files on the 
 # VBC cluster. This assumes you have previously unzipped those files using
-# `003.scripts/001.unzip_raw_bams.sh`.
+# `003.scripts/001.methylseq/001.unzip_raw_bams.sh`.
 # See https://github.com/yupenghe/methylpy for pipeline details.
 
 ml nextflow/21.02.0-edge

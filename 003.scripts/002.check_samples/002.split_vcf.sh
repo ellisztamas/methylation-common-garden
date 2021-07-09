@@ -2,7 +2,7 @@
 
 # Tom Ellis, June 2021
 # SLURM script to separate the single very large VCF file created by
-# `003.scripts/003.genotype_calls.sh` into individual VCF files.
+# `003.scripts/002.check_samples/001.genotype_calls.sh` into individual VCF files.
 
 # SLURM
 #SBATCH --mem=5GB

@@ -69,7 +69,7 @@ I corrected the position labels in `001.data/003.plating_files/sequencing_plates
 
 #### Raw bisulphite data
 
-Raw data are currently in `/groups/nordborg/projects/nordborg_rawdata/Athaliana/bisulfite_seq/field_data_from_2012` but will need moving to `/groups/nordborg/raw.data` at some point. See `003.scripts/001.unzip_raw_bams.sh` for which zip file is which and how they are processed.
+Raw data are currently in `/groups/nordborg/projects/nordborg_rawdata/Athaliana/bisulfite_seq/field_data_from_2012` but will need moving to `/groups/nordborg/raw.data` at some point. See `003.scripts/001.methylseq/001.unzip_raw_bams.sh` for which zip file is which and how they are processed.
 
  Plates 167, 168 and 169 were run on a NovaSeq machine, which means reads are split over two zip files because of some kind of NovaSeq voodoo:
  

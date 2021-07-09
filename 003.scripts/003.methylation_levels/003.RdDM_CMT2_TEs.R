@@ -1,6 +1,6 @@
 # Tom Ellis, July 2021, modifying code by Eriko Sasaki
 #
-# This takes files created by `003.scripts/009.methylation_on_TEs.sh`
+# This takes files created by `003.scripts/003.methylation_levels/002.methylation_on_TEs.sh`
 # and average over TEs in the genome. It returns a table with 3 rows
 # for each sample showing mean methylation on all TEs, RdDM- and CMT2-
 # targetted TEs, with columns for CG, CHG and CHH sequence contexts.

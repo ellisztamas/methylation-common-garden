@@ -12,7 +12,7 @@
 # pipeline information.
 #
 # It is assumed that you have previously run the methylseq pipeline
-# on unaligned BAM files; see `003.scripts/002.methylseq.sh`
+# on unaligned BAM files; see `003.scripts/001.methylseq/002.methylseq.sh`
 
 ml nextflow/21.02.0-edge
 
