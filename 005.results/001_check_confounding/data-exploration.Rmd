@@ -261,7 +261,7 @@ mean_mC %>%
   filter(site == "Adal") %>% 
   left_join(
     read_csv(
-      "001.data/003.plating_files/common_garden_genotyping_master_list.csv",
+      "001.data/001.sequencing/003.plating_files/common_garden_genotyping_master_list.csv",
       col_types = "ccccccccccccc"),
     by = c("id" = "label")
   ) %>% 

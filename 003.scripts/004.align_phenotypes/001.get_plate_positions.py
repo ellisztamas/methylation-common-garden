@@ -26,19 +26,19 @@ set_index('file')
 snp_match.index = [x[2] for x in snp_match.index.str.split(".")]
 
 # Import file mapping barcodes to positions within ecah plate
-indices = pd.read_csv("001.data/003.plating_files/NGS_index_sets_long.csv", dtype=str)
+indices = pd.read_csv("001.data/001.sequencing/003.plating_files/NGS_index_sets_long.csv", dtype=str)
 # Import field experiment master list
 master_list = pd.read_csv(
-    "001.data/003.plating_files/common_garden_genotyping_master_list.csv", dtype=str
+    "001.data/001.sequencing/003.plating_files/common_garden_genotyping_master_list.csv", dtype=str
 ).\
 filter(items = ['label', 'lines', 'Site', 'position']).\
 merge(
-    pd.read_csv("001.data/003.plating_files/sequencing_plates.csv"),
+    pd.read_csv("001.data/001.sequencing/003.plating_files/sequencing_plates.csv"),
     left_on='label', right_on='id', how='right'
 ).astype(str)
 
 # Path to raw unzipped bam files.
-path="/users/thomas.ellis/common_gardens/001.data/001.raw/002.unzipped_raw_bams/1*/"
+path="/users/thomas.ellis/common_gardens/001.data/001.sequencing/002.unzipped_bams/1*/"
 
 # List of bam files stores as a Pandas series
 bam_files = glob.glob( path + "*bam" )
@@ -78,7 +78,7 @@ astype(int)
 sample_csv  = sample_csv.\
 reset_index().rename(columns = {'index': 'file' }).\
 merge(
-    pd.read_csv("001.data/003.plating_files/NGS_index_sets_long.csv", dtype=str),
+    pd.read_csv("001.data/001.sequencing/003.plating_files/NGS_index_sets_long.csv", dtype=str),
     how = "left", on = ['row_id', 'col_id']
 ).\
 sort_values(by = ['seqlane_id', 'COL', 'ROW']).\

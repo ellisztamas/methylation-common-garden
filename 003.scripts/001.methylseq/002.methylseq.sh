@@ -14,8 +14,8 @@ DIR=/scratch-cbe/users/thomas.ellis
 
 # Where the data are
 # Reference genome
-ref_genome=$PROJ/001.data/001.raw/TAIR10_wholeGenome.fasta
-DATA=$PROJ/001.data/001.raw/002.unzipped_raw_bams/ # where unzipped reads are saved
+ref_genome=$PROJ/001.data/002.reference_genome/TAIR10_wholeGenome.fasta
+DATA=$PROJ/001.data/001.sequencing/002.unzipped_bams_bams/ # where unzipped reads are saved
 
 # Where to save the output
 WORK=$DIR/000.work/001.methylseq # Nextflow working directory

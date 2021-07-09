@@ -92,6 +92,6 @@ weighted_means = (sum_mC['mC_reads'] / sum_mC['all_reads']).round(5).astype(str)
 # Write input file name plus weighted means for organelles to disk.
 out= open(args.output, 'a') 
 out.write(
-    os.path.basename(args.input) + 'organelles' + ',' + ','.join(weighted_means) + '\n'
+    os.path.basename(args.input) + ',organelles,' + ','.join(weighted_means) + '\n'
 )
 out.close()

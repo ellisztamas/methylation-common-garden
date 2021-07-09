@@ -24,13 +24,13 @@ DIR=/scratch-cbe/users/thomas.ellis
 
 # Where the data are
 # Reference genome
-ref_genome=$PROJ/001.data/001.raw/TAIR10_wholeGenome.fasta
+ref_genome=$PROJ/001.data/002.reference_genome/TAIR10_wholeGenome.fasta
 # Output of the methylseq pipeline
 MSEQ=$DIR/001.methylseq
 # Matrix of known SNP positions. This means SNPs do not need to be called on the the bisulphite data
-KNOWN_SITES=$PROJ/001.data/001.raw/known_sites.tsv.gz
+KNOWN_SITES=$PROJ/001.data/002.reference_genome/known_sites.tsv.gz
 # Folder with the database files for SNPmatch
-DB=$PROJ/001.data/001.raw/003.snpmatch
+DB=$PROJ/001.data/003.snpmatch_files
 
 # Where to save the output
 CALLS=$DIR/genotype_calls

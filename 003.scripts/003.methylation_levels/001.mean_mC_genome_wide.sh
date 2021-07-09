@@ -3,7 +3,7 @@
 # SLURM
 #SBATCH --job-name=mean_mC_jobarray
 #SBATCH --output=mean_mC_genome_wide.log
-#SBATCH --mem-per-cpu=5GB
+#SBATCH --mem-per-cpu=16GB
 #SBATCH --qos=medium
 #SBATCH --time=12:00:00
 #SBATCH --ntasks=1
@@ -26,9 +26,9 @@ module load anaconda3/2019.03
 source $EBROOTANACONDA3/etc/profile.d/conda.sh
 
 # Where the data are
-ALLC='001.data/002.processed/001.methylseq/methylpy/'
+ALLC='004.output/001.methylseq/methylpy/'
 # Where to save the output
-OUT='001.data/002.processed/mean_mC_genome_wide.csv'
+OUT='004.output/003.methylation_levels/mean_mC_genome_wide.csv'
 
 # Create an empty file with a header
 echo "file,chr_type,CG,CHG,CHH,coverage" > $OUT

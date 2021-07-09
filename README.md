@@ -65,7 +65,7 @@ There are two sequencing datasets, which overlap:
 2. For plate 168 it I plated columns 1-12 as 12-1. 
 3. For plate 169 I plated every row from H-A instead of A-H.
 
-I corrected the position labels in `001.data/003.plating_files/sequencing_plates.csv`, so there will be a discrepancy with the group NGS master list.
+I corrected the position labels in `001.data/001.sequencing/003.plating_files/sequencing_plates.csv`, so there will be a discrepancy with the group NGS master list.
 
 #### Raw bisulphite data
 
@@ -80,7 +80,7 @@ Raw data are currently in `/groups/nordborg/projects/nordborg_rawdata/Athaliana/
 
 The following steps to process raw reads are carried out. See scripts in `003.scripts` for details. These operate on the VBC-cluster node `scratch-cbe` for speed, and results are copied to the project folder.
 
-1. Rahul Pisupati's fork of the [methylseq](https://github.com/rbpisupati/methylseq) pipeline to process bam files into methylation calls.Output is saved to `/001.data/002.processed/001.methylseq/`.
+1. Rahul Pisupati's fork of the [methylseq](https://github.com/rbpisupati/methylseq) pipeline to process bam files into methylation calls.Output is saved to `/004.output/001.methylseq/`.
 2. [nf-haplocaller](https://github.com/Gregor-Mendel-Institute/nf-haplocaller) to call genotypes based on a matrix of known variable sites
     * Note: We had to change [line 80](https://github.com/Gregor-Mendel-Institute/nf-haplocaller/blob/5c78ec474d728a277eebc2bd8b365bb5841155f7/snps_bsseq.nf#L80) from:
     ```python $workflow.projectDir/scripts/epidiverse_change_sam_queries.py```

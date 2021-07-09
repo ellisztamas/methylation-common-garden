@@ -12,11 +12,11 @@ DIR=/scratch-cbe/users/thomas.ellis
 
 # Where the data are
 # Reference genome
-ref_genome=$PROJ/001.data/001.raw/TAIR10_wholeGenome.fasta
+ref_genome=$PROJ/001.data/002.reference_genome/TAIR10_wholeGenome.fasta
 # Output of the methylseq pipeline
 CALLS=$DIR/genotype_calls
 # Folder with the database files for SNPmatch
-DB=$PROJ/001.data/001.raw/003.snpmatch
+DB=$PROJ/001.data/003.snpmatch_files
 
 # Where to save the output
 MATCH=$DIR/001.snpmatch

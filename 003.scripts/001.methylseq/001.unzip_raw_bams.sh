@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # 
 # Tom Ellis
-# Script to unzip -q each raw data file to the `scratch-cbe` drive
+# Script to unzip each raw data file to the `scratch-cbe` drive
 # on the VBC cluster.
 # Reads for plates run on a NovaSeq machine are split across two BAM
 # files, so for those plates reads are combined using samtools.
 
 # SLURM
 #SBATCH --mem=5GB
-#SBATCH --output=./003.scripts/unzip -q_raw_bams.log
+#SBATCH --output=./003.scripts/unzip_raw_bams.log
 #SBATCH --qos=medium
 #SBATCH --time=24:00:00
 #SBATCH --nodes=1
@@ -27,10 +27,10 @@ DIR=/scratch-cbe/users/thomas.ellis
 
 # Where the data are
 # Location of the raw zip file on the VBC cluster
-RAW=$PROJ/001.data/001.raw/001.raw_reads
+RAW=$PROJ/001.data/001.sequencing/001.zipped_bams
 
 # Where to save the output
-DATA=$DIR/002.unzip -qped_raw_bams # where to unzip -q raw reads
+DATA=$DIR/002.unzip -qped_raw_bams # where to unzip raw reads
 OUT=$PROJ/001.data/001.raw
 
 mkdir -p $DATA

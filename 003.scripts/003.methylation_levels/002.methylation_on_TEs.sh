@@ -19,11 +19,11 @@
 module load perl/5.28.0-gcccore-7.3.0
 
 # Where the data are
-ALLC=001.data/002.processed/001.methylseq/methylpy
+ALLC=004.output/001.methylseq/methylpy
 # ALLC=/groups/nordborg/projects/cegs/rahul/014.fieldData/003.methylpy/002_3_fieldsamples_2019/allc
 # Where to save the output
 OUT=004.output/003.methylation_levels/reads_on_each_TE
-INFO=001.data/001.raw/003.genome_annotations/Araport11_transposons_class.201606.txt
+INFO=001.data/002.reference_genome/Araport11_transposons_class.201606.txt
 
 mkdir -p $OUT
 

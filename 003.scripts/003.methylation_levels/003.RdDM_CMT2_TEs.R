@@ -9,11 +9,11 @@ library(tidyverse)
 
 # Vectors of TEs known to be targetted by RdDM and CMT2.
 CMT2=read_csv(
-  '001.data/001.raw/003.genome_annotations/CMT2_target_TEs.txt',
+  '001.data/002.reference_genome/CMT2_target_TEs.txt',
   col_names = FALSE) %>%
   pull(X1)
 RdDM=read_csv(
-  '001.data/001.raw/003.genome_annotations/RdDM_target_TEs.txt', 
+  '001.data/002.reference_genome/RdDM_target_TEs.txt', 
   col_names = FALSE) %>% 
   pull(X1)
 

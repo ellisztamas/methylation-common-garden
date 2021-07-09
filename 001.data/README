@@ -1,0 +1,5 @@
+Data are divided into three files:
+
+1. Things to do with bisulphite sequence data, includind bam files and plating.
+2. Things to do with the reference genome, including annotations.
+3. Reference files to pass to SNP match. This is a symlink to a shared folder on the GMI cluster.
