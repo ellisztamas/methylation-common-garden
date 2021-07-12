@@ -37,7 +37,7 @@ This report explores possible sources of variation in the common-garden data. I 
 
 ```{r import-data}
 # Import genome-wide average methylation levels for each sample
-source("003.scripts/008.format_phenotypes.R")
+source("003.scripts/004.align_phenotypes/002.format_phenotypes.R")
 mean_mC <- mean_mC %>% 
   filter(CHH < 0.8)
 
