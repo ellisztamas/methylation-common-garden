@@ -1,0 +1,420 @@
+---
+title: "Methylation variance among replicate individuals"
+author: Tom Ellis
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_floating: yes
+  bookdown::word_document2: null
+  bookdown::pdf_book:
+    toc: yes
+  pdf_document:
+    citation_package: natbib
+    fig_caption: yes
+    keep_tex: yes
+documentclass: article
+# header-includes:
+# fontfamily: mathpazo
+# fontsize: 12pt
+# geometry: margin=1in
+# bibliography: /datadisk/Dropbox/bibtex_files/tellis.bib
+# csl: /datadisk/Dropbox/bibtex_files/am-nat.csl
+# endnote: no
+abstract: ""
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, cache=T, cache.lazy=T, warning = FALSE, message = FALSE)
+
+library("tidyverse")
+library("ggpubr")
+library("lme4")
+```
+
+```{r}
+# Import genome-wide average methylation levels for each sample
+source("003.scripts/004.align_phenotypes/002.format_phenotypes.R")
+
+# Vector of genotypes with replicates over sites
+gx <- mC$genome_wide %>% 
+  filter(plate %in% c('145', '144')) %>% 
+  pull(genotype) %>% 
+  unique()
+
+#' Logit transform for numerical vector
+logit <- function(x) log( x/(1-x) )
+
+# Filter each dataset for replicated genotypes
+intensive <- mC %>% 
+  lapply(FUN = function(x){
+    x %>% 
+      filter(genotype %in% gx) %>% 
+      # scale phenotypes
+      mutate(
+        CG_scaled  = scale(CG),
+        CHH_scaled = scale(CHH),
+        CHG_scaled = scale(CHG)
+      ) 
+  })
+```
+
+For 12 accessions from the four common-garden sites we have replicates individuals for each genotype. The following table summarises sample sizes for each site-genotype combination after removing samples with dubious sequences.
+
+```{r}
+intensive$genome_wide %>% 
+  group_by(genotype, site) %>% 
+  summarise(
+    n=n()
+  ) %>%
+  pivot_wider(
+    names_from = site,
+    values_from = n
+  ) %>% 
+  knitr::kable()
+```
+
+# Plate effects
+
+These samples were the first to be sequenced (before I started), and were chosen to have high and low levels of CG methylation. Samples are distributed over two sequencing plates (plates 144 and 145 on the old NGS master list). There are clear plate effects on CHG and CHH methylation, with differing patterns depending where you look.
+
+```{r}
+rbind(
+  intensive$genome_wide, 
+  intensive$CMT2,
+  intensive$RdDM
+) %>% 
+  ggplot(aes(x = CHH, y = CHG, colour=plate)) +
+  geom_point() + 
+  stat_smooth(method = lm, se=FALSE) +
+  facet_grid(~ type, scales=("free"))
+
+```
+
+Samples are a lot more mixed by site and genotype.
+
+```{r, fig.height=20/2.54}
+ggarrange(
+  rbind(
+    intensive$genome_wide, 
+    intensive$CMT2,
+    intensive$RdDM
+  ) %>% 
+    ggplot(aes(x = CHH, y = CHG, colour=site)) +
+    geom_point() + 
+    stat_smooth(method = lm, se=FALSE) +
+    facet_grid(~ type, scales=("free")),
+  
+  rbind(
+    intensive$genome_wide, 
+    intensive$CMT2,
+    intensive$RdDM
+  ) %>% 
+    ggplot(aes(x = CHH, y = CHG, colour=genotype)) +
+    geom_point() + 
+    stat_smooth(method = lm, se=FALSE) +
+    facet_grid(~ type, scales=("free")),
+  
+  nrow=2
+)
+```
+
+You even see plate effects for CG methylation.
+
+```{r}
+rbind(
+  intensive$genome_wide, 
+  intensive$CMT2,
+  intensive$RdDM
+) %>% 
+  ggplot(aes( x=plate, y = CG)) + 
+  geom_boxplot() +
+  facet_grid(~type)
+```
+
+This is a little clearly when plotted as a scatter plot, here against CHH.
+
+```{r}
+rbind(
+  intensive$genome_wide, 
+  intensive$CMT2,
+  intensive$RdDM
+) %>% 
+  ggplot(aes(x = CHH, y = CG, colour=plate)) +
+  geom_point() + 
+  stat_smooth(method = lm, se=FALSE) +
+  facet_grid(~ type, scales=("free"))
+
+```
+
+Given the plate effect we should check that samples of each site and genotype are not confined to any single plate, otherwise we cannot estimate G or E effects. Samples from each site are found on each plate.
+
+```{r}
+intensive$genome_wide %>% 
+  group_by(site, plate) %>% 
+  summarise(
+    n = n()
+  ) %>% 
+  pivot_wider(names_from = plate, values_from = n) %>% 
+  knitr::kable()
+```
+
+Samples of each genotype are also found on each plate, although they are certainly unbalanced.
+
+```{r}
+intensive$genome_wide %>% 
+  group_by(genotype, plate) %>% 
+  summarise(
+    n = n()
+  ) %>%
+  pivot_wider(names_from = plate, values_from = n) %>% 
+  knitr::kable()
+```
+
+Some genotype-site combinations are missing (because SNPmatch suggested not to trust the sequences), which will limit our ability to estimate GxE variances.
+
+```{r}
+intensive$genome_wide %>% 
+  group_by(site, genotype, plate) %>% 
+  summarise(
+    n = n()
+  ) %>% 
+  pivot_wider(names_from = plate, values_from = n) %>%
+  knitr::kable()
+```
+
+# Variance partitioning
+
+Since we have replicate individuals we can quantify the contribution of genotype, site, the genotype x site interaction and plate effects to variation in cytosine methylation. In what follows I also included, but did not plot, genome-wide sequence coverage over cytosines from `allc` files as a covariate; values for proportion variance explained also do not include this. In addition to looking at variance in CG, CHG and CHH directly, we can also look at variation along the two principle components: PC1 corresponds to the axis of positive correlation between CHG and CHH, and PC2 to the axis perpendicular to this corresponding to a negative covariance between CHG and CHH.
+
+```{r}
+# Add values for positive and negative principle components
+for(seq in names(intensive)){
+  pca <- intensive[[seq]] %>% 
+    select(CHH_scaled, CHG_scaled) %>%
+    as.matrix() %>%
+    prcomp(retx=TRUE)
+  intensive[[seq]] <- cbind(intensive[[seq]], pca$x)
+}
+```
+
+
+```{r}
+
+# For each data.frame in mC fit a mixed effects model for each sequence context
+# using site, genotype, genotype by site, plate and coverage.
+# Variance components are normalised by the sum of variance components, which
+# ignores variance due to variation in sequence coverage
+
+varcomp <- vector('list', length(mC))
+names(varcomp) <- names(mC)
+
+for(i in names(mC)){
+  
+  context <- c("CG_scaled", "CHH_scaled", "CHG_scaled", "PC1", "PC2")
+  
+  this_vc <- vector('list', length(context))
+  names(this_vc) <- context
+  # Fit model for each sequence context
+  for ( c in context ){
+    
+    frm <- as.formula(
+      paste(
+        c, " ~ (1|genotype) + (1|site) + (1| genotype:site) + (1 | plate) + coverage"
+        # c, " ~ (1|genotype) + (1|site) + (1| genotype:site) + coverage"
+      )
+    )
+    
+    m <- lmer(frm, data = intensive[[i]])
+    
+    vars <- as.data.frame(VarCorr(m))$vcov
+    this_vc[[c]] <- data.frame(
+      sequence  = i,
+      context   = c,
+      component = as.data.frame(VarCorr(m))$grp,
+      explained = vars / sum(vars)
+    )
+    
+  }
+  varcomp[[i]] <- do.call('rbind', this_vc)
+  
+}
+
+# Reorder factor levels so they plot nicely
+varcomp <- do.call('rbind', varcomp) %>% 
+  mutate(component = fct_relevel(component, 
+                                 "genotype", "site", "genotype:site", "plate", "Residual")
+                                 # "genotype", "site", "genotype:site", "Residual")
+  )
+
+```
+
+The plot below shows variance explained by each component for each sequence context for cytosines genome wide, on CMT2-targetted TEs and RdDM-targetted TEs. This plot needs error bars (TBA), but anticipate that these will be large. The first things to note are that (1) residual variation is large everywhere, (2) plate effects are typcially *much* larger than genotype or site, (3) except for along PC2, where differences between accessions are more important. I also ran this without the plate effect, and number for G, E and GxE did not change substantially.
+
+```{r}
+varcomp %>% 
+  filter(sequence %in% c("genome_wide", "CMT2", "RdDM")) %>% 
+  ggplot(aes(x = component, y = explained, colour = component)) + 
+  geom_point() +
+  facet_grid(sequence ~ context) + 
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)
+  ) +
+  labs(
+    x = "Variance explained",
+    y = "Variance component"
+  )
+
+m <- lmer( I(logit(CG)) ~ (1|genotype) + (1|site) + (1| genotype:site) + (1 | plate) + coverage,
+           data = intensive$genome_wide)
+
+```
+
+This plot shows the same data, but without the values for plate or residual variation so one can compare the biological effects more clearly. The effects of genotype, site and their interaction are clearly weak. Again, note that error bars on these values are likely to be large.
+
+```{r}
+varcomp %>% 
+  filter(
+    sequence %in% c("genome_wide", "CMT2", "RdDM"),
+    component %in% c("genotype", "site", "genotype:site")
+  ) %>% 
+  ggplot(aes(x = component, y = explained, colour = component)) + 
+  geom_point() +
+  facet_grid(sequence ~ context) + 
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)
+  ) +
+  labs(
+    x = "Variance explained",
+    y = "Variance component"
+  )
+```
+
+```{r}
+p <- var(intensive$genome_wide$CG)
+  
+ge <- intensive$genome_wide %>% 
+  group_by(genotype, site) %>% 
+  summarise(
+    mean = mean(CG_scaled , na.rm = TRUE)
+  ) %>% 
+  pull(mean) %>%
+  var() / p
+
+g <- intensive$genome_wide %>% 
+  group_by(genotype) %>% 
+  summarise(
+    mean = mean(CG , na.rm = TRUE)
+  ) %>% 
+  pull(mean) %>% 
+  var() / p
+
+e <- intensive$genome_wide %>% 
+  group_by(site) %>% 
+  summarise(
+    mean = mean(CG , na.rm = TRUE)
+  ) %>% 
+  pull(mean) %>% 
+  var() / p
+
+c <- intensive$genome_wide %>% 
+  group_by(plate) %>% 
+  summarise(
+    mean = mean(CG , na.rm = TRUE)
+  ) %>% 
+  pull(mean) %>%
+  var() / p
+```
+
+It's a bit alarming that the variance explained by genotype (i.e. heritability) is so low.
+One explanation is that the linear model is not doing what I think it's doing, or does not converge on the right answer. As a sanity check, I calculated broad sense heritability manually as the variance between all plants divided by variance between genotype means. This gives a value of `r round(g, 3)`, which matches the output of the linear model. Note: I suspect the results for GxE would be different if I dove into the modelling deeper, but I have not done this yet.
+
+```{r, include = FALSE}
+te_load <- read_csv("001.data/004.soto_TE_population_freqs.csv", col_types = 'cd')
+
+te_load <- te_load %>% 
+  filter(accession %in% unique(intensive$genome_wide$genotype)) %>% 
+  filter(is.finite(population_frequency)) %>% 
+  # filter(population_frequency < 0.1) %>% 
+  group_by(accession) %>% 
+  summarise(
+    load = n()
+  ) %>% 
+  rename(genotype = accession)
+
+
+
+plot(intensive$genome_wide$PC2,
+     intensive$genome_wide %>% left_join(te_load, by = "genotype") %>% pull(load)
+)
+
+```
+
+# What could explain the plate effect?
+
+The samples were all checked with SNPmatch, and I only kept samples that matched what they were supposed to be, so I don't think genotype labels can have been swapped.
+
+There is no evidence for microhabitat variation between trays in the experiment. 
+
+```{r}
+intensive$genome_wide %>% 
+  mutate(tray = substr(tray_position, 1, 2)) %>% 
+  ggplot(aes(x = tray, y = CG, colour = plate)) +
+  # geom_point()
+  geom_boxplot()
+```
+
+It may be that accessions with higher CG happen to have been plated onto plate 144.
+This does not seem to be the case.
+
+```{r}
+intensive$genome_wide %>% 
+  group_by(genotype, plate) %>% 
+  summarise(
+    CG = mean(CG, na.rm=TRUE)
+  ) %>% 
+  ggplot(aes(x = genotype, y = CG, colour=plate)) +
+  geom_point()
+```
+
+There are differences in sequence coverage between plates, but this does not correlate with CG methylation.
+
+```{r}
+intensive$genome_wide %>% 
+  ggplot(aes(x = coverage, y = CG, colour=plate)) + 
+  geom_point()
+```
+
+There could be errors in how sequence data were processed. Specifically:
+
+1. Aligning bam files and creating methylpy files
+2. Calculating mean methylation levels from the resulting allc files
+
+Rahul and I have independently run different versions of scripts to map reads (addressing point 1) with slightly different settings. If I take the allc files from those analyses and run the same script to calculate mean methylation the output is strongly correlated. We can check exactly what the differences in script are to see what's driving the less-than-perfect correlation, but there doesn't seem to be enough noise to generate a plate effect
+
+```{r}
+old_data <- read_csv("004.output/003.methylation_levels/mean_mC_genome_wide_compare_with_old_data.csv") %>% 
+  filter(chr_type == "autosomes") %>% 
+  mutate(file  = str_sub(file, 6, -8)) %>% 
+  left_join(mC$genome_wide, by = "file")
+
+old_data %>% 
+  ggplot(aes(x = CG.x, y = CG.y, colour= plate)) + 
+  geom_point() + 
+  labs(
+    x = "CG (Rahul)",
+    y = "CG (Tom)"
+  )
+
+```
+
+I did not do a formal test to check point two, but I note that I used my own script to calculate genome-wide methylation levels, and Eriko's script to calculated methylation over TEs, and the patterns look very similar (low CG, high residuals etc), so this in itself cannot be driving differences.
+
+
+
+

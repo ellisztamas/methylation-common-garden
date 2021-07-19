@@ -45,7 +45,7 @@ colnames(CG)=FList
 output <- rbind(
   # Methylation on all annotated TEs.
   data.frame(
-    file = data.frame(FList),
+    file = FList,
     TE_type = "all",
     CG  = CG  %>% colMeans(na.rm = TRUE),
     CHG = CHG %>% colMeans(na.rm = TRUE),
@@ -53,7 +53,7 @@ output <- rbind(
   ),
   # CMT2-targetted TEs
   data.frame(
-    file = data.frame(FList),
+    file = FList,
     TE_type = "CMT2",
     CG  = CG[CMT2,]  %>% colMeans(na.rm = TRUE),
     CHG = CHG[CMT2,] %>% colMeans(na.rm = TRUE),
@@ -61,7 +61,7 @@ output <- rbind(
   ),
   # RdDM-targetted TEs
   data.frame(
-    file = data.frame(FList),
+    file = FList,
     TE_type = "RdDM",
     CG  = CG[RdDM,]  %>% colMeans(na.rm = TRUE),
     CHG = CHG[RdDM,] %>% colMeans(na.rm = TRUE),

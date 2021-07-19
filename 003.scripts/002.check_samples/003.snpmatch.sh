@@ -20,12 +20,11 @@ DB=$PROJ/001.data/003.snpmatch_files
 
 # Where to save the output
 MATCH=$DIR/001.snpmatch
-OUT=$PROJ/004.output
+OUT=$PROJ/004.output/002.link_samples/
 
 mkdir -p $DIR/work/snpmatch
 mkdir -p $MATCH
 mkdir -p $OUT
-
 
 # Run the pipeline
 nextflow run ~/nf-snpmatch/main.nf \

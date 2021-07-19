@@ -32,11 +32,13 @@ import numpy as np
 import argparse
 import os
 
+# Script input parameters
 parser = argparse.ArgumentParser(description = 'Parse parameters for multilocus GWAS')
 parser.add_argument('-i', '--input', help = 'Path to allc file from the methylpy pipeline', required = True)
 parser.add_argument('-o', '--output', help = 'Path to the file to which results should be appended.', required = True)
 args = parser.parse_args()
 
+# Import and allc file for cytosines in all contexts.
 allc = pd.read_csv(
     args.input,
     compression='gzip',

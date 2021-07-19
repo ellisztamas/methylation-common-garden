@@ -39,7 +39,3 @@ for f in $FILES; do
   --input $f \
   --output $OUT
 done
-
-# python3 002.library/python/weighted_mean_mC_from_allc.py \
-# --input $ALLC/allc_HMYF5DRXX_1#128709_TAGGCATGCGCTAGAG.tsv.gz \
-# --output $OUT
