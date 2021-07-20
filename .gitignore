@@ -1,6 +1,8 @@
 .nextflow*
 001.data/**
+004.output/*.methylseq
 004.output/*.snpmatch/*
+*.tsv.gz
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,r,jupyternotebooks,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,r,jupyternotebooks,visualstudiocode
