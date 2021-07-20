@@ -30,7 +30,7 @@ DIR=/scratch-cbe/users/thomas.ellis
 RAW=$PROJ/001.data/001.sequencing/001.zipped_bams
 
 # Where to save the output
-DATA=$DIR/002.unzip -qped_raw_bams # where to unzip raw reads
+DATA=$DIR/002.unzipped_raw_bams # where to unzip raw reads
 OUT=$PROJ/001.data/001.raw
 
 mkdir -p $DATA
