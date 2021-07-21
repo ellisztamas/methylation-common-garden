@@ -33,12 +33,13 @@ nextflow run ~/methylseq/main.nf \
 --fasta $ref_genome \
 --outdir $MSEQ \
 --umeth "ChrC:" \
+--clip_r1 15 \
 --clip_r2 15 \
 --aligner bismark \
 --relax_mismatches \
 --num_mismatches 0.5 \
 --file_ext bam \
--w $WORK
+-w $WORK    
 # -resume
 # Copy these results to the permanent projects folder
 stage $MSEQ $OUT
