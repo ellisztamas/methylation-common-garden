@@ -61,3 +61,23 @@ mC <- lapply(mC, function(x) x %>% filter(CHH<0.8))
 
 # Tidy extra tables
 rm(meth_gw, meth_tes)
+
+
+# Data for the intensive sample only.
+# Vector of genotypes with replicates over sites
+gx <- mC$genome_wide %>% 
+  filter(plate %in% c('145', '144')) %>% 
+  pull(genotype) %>% 
+  unique()
+# Filter each dataset for replicated genotypes
+intensive <- mC %>% 
+  lapply(FUN = function(x){
+    x %>% 
+      filter(genotype %in% gx) %>% 
+      # scale phenotypes
+      mutate(
+        CG_scaled  = scale(CG),
+        CHH_scaled = scale(CHH),
+        CHG_scaled = scale(CHG)
+      ) 
+  })

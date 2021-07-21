@@ -1,0 +1,762 @@
+---
+title: "The nature of confounding in genome-wide methylation studies"
+author: "Tom Ellis"
+date: "22nd July 2021"
+output:
+  ioslides_presentation:
+    widescreen: yes
+    css: ../gmi.css
+---
+
+<!-- Some HTML to include the GMI logo and styling -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+
+<script>
+$(document).ready(function() {
+$('slide:not(.title-slide, .backdrop, .segue)').append('<footer></footer>');    
+$('footer').attr('label', 'thomas.ellis@gmi.oeaw.ac.at @ellisztamas');
+
+})
+</script>
+
+<style>
+footer:after {
+font-size: 12pt;
+content: attr(label);
+position: absolute;
+bottom: 1px;
+right: 60px;
+line-height: 1.9;
+display: block;
+color: #007243
+}
+</style>
+
+<!-- HTML for adding footnotes that allow formatting. Usage: -->
+<!-- Some text.<footnote>And a footnote. http://stackoverflow.com</footnote> -->
+<style>
+div.footnotes {
+position: absolute;
+bottom: 0;
+margin-bottom: 10px;
+width: 80%;
+font-size: 0.6em;
+}
+</style>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+$('slide:not(.backdrop):not(.title-slide)').append('<div class=\"footnotes\">');
+
+$('footnote').each(function(index) {
+var text  = $(this).html();
+var fnNum = (index+1).toString();
+$(this).html(fnNum.sup());
+
+var footnote   = fnNum + '. ' + text + '<br/>';
+var oldContent = $(this).parents('slide').children('div.footnotes').html();
+var newContent = oldContent + footnote;
+$(this).parents('slide').children('div.footnotes').html(newContent);
+});
+});
+</script>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  cache = T,
+  cache.lazy = T,
+  fig.align = 'center',
+  warning = F,
+  message = F,
+  fig.path="figures/"
+)
+
+library('tidyverse')
+library("lme4")
+library("ggpubr")
+```
+
+```{r import-data}
+# Import genome-wide average methylation levels for each sample
+source("003.scripts/004.align_phenotypes/002.format_phenotypes.R")
+```
+
+## Background
+
+- Cytosines can be methylated in CG, CHG, CHH contexts
+  - CG mostly stable
+  - CHG and CHH behave more like phenotypes
+
+## Background
+
+- Cytosines can be methylated in CG, CHG, CHH contexts
+  - CG mostly stable
+  - CHG and CHH behave more like phenotypes
+- Quantify how much is due to
+  - genetics
+  - environment
+  - passive inheritance
+
+## CHG and CHH covary
+
+```{r covar-each-context}
+ggarrange(
+  intensive$genome_wide %>% 
+    ggplot(aes(x = CHH, y = CHG)) + 
+    geom_point(colour='red'),
+  intensive$genome_wide %>% 
+    ggplot(aes(x = CHH, y = CG)) + 
+    geom_point(),
+  intensive$genome_wide %>% 
+    ggplot(aes(x = CHG, y = CG)) + 
+    geom_point(),
+  ncol=3, common.legend = TRUE)
+```
+
+- Confounding or biology?
+
+## Aims
+
+- How much variation is due to
+  - genetics?
+  - environment?
+  - their interaction?
+- Is the covariance between contexts real?
+
+## Aims
+
+- How much variation is due to
+  - genetics?
+  - environment?
+  - their interaction?
+- Is the covariance between contexts real?
+- Need to replicate individuals
+
+## Common gardens
+
+```{r exp-setup-0}
+par(mar=c(4,1,0,0))
+plot(x = c(0, 200), y = c(0, 27),
+     type = 'n',
+     xlab="Accession",
+     ylab="",
+     axes=F)
+axis(1)
+
+text(-5, c(4,11,18,25), c("S1", "S2", "N1", "N2"), adj = c(1), xpd=NA, col=4:1)
+
+# 1, 8, 15, 22
+# 6, 13, 20, 27
+# xv <- seq(1,200,3)
+# points(xv, rep(25, length(xv)), col=1)
+# points(xv, rep(18, length(xv)), col=2)
+# points(xv, rep(11, length(xv)), col=3)
+# points(xv, rep( 4, length(xv)), col=4)
+```
+
+- 200 accessions at four sites in Sweden in 2011/2 by Daniele *et al.*
+
+## Common garden design
+
+```{r exp-setup-1}
+par(mar=c(4,1,0,0))
+plot(x = c(0, 200), y = c(0, 27),
+     type = 'n',
+     xlab="Accession",
+     ylab="",
+     axes=F)
+axis(1)
+
+text(-5, c(4,11,18,25), c("S1", "S2", "N1", "N2"), adj = c(1), xpd=NA, col=4:1)
+
+# 1, 8, 15, 22
+# 6, 13, 20, 27
+xv <- seq(1,200,3)
+points(xv, rep(25, length(xv)), col=1)
+points(xv, rep(18, length(xv)), col=2)
+points(xv, rep(11, length(xv)), col=3)
+points(xv, rep( 4, length(xv)), col=4)
+```
+
+- 200 accessions at four sites in Sweden in 2011/2 by Daniele *et al.*
+
+## Common garden design
+
+```{r exp-setup-2}
+par(mar=c(4,1,0,0))
+plot(x = c(0, 200), y = c(0, 27),
+     type = 'n',
+     xlab="Accession",
+     ylab="",
+     axes=F)
+axis(1)
+
+text(-5, c(4,11,18,25), c("S1", "S2", "N1", "N2"), adj = c(1), xpd=NA, col=4:1)
+
+# 1, 8, 15, 22
+# 6, 13, 20, 27
+xv <- seq(1,200,3)
+
+points(rep(xv,6), rep(22:27, each = length(xv)), col=1)
+points(rep(xv,6), rep(15:20, each = length(xv)), col=2)
+points(rep(xv,6), rep( 8:13, each = length(xv)), col=3)
+points(rep(xv,6), rep( 1: 6, each = length(xv)), col=4)
+
+```
+
+- 24 replicates for each accession/experiment
+- Tissue collected by Manu, Polina, Fernando in 2012
+
+## Extensive sample
+
+```{r exp-setup-3}
+par(mar=c(4,1,0,0))
+plot(x = c(0, 200), y = c(0, 27),
+     type = 'n',
+     xlab="Accession",
+     ylab="",
+     axes=F)
+axis(1)
+
+text(-5, c(4,11,18,25), c("S1", "S2", "N1", "N2"), adj = c(1), xpd=NA, col=4:1)
+
+# 1, 8, 15, 22
+# 6, 13, 20, 27
+xv <- seq(1,200,3)
+points(rep(xv,6), rep(22:27, each = length(xv)), col=1, cex=0.7)
+points(rep(xv,6), rep(15:20, each = length(xv)), col=2, cex=0.7)
+points(rep(xv,6), rep( 8:13, each = length(xv)), col=3, cex=0.7)
+points(rep(xv,6), rep( 1: 6, each = length(xv)), col=4, cex=0.7)
+
+# vx <- sample(xv, 12, replace=12)
+# points(rep(vx,6), rep(22:27, each=length(vx)), col=1, pch=16, cex = 1.5)
+# points(rep(vx,6), rep(15:20, each=length(vx)), col=2, pch=16, cex = 1.5)
+# points(rep(vx,6), rep( 8:13, each=length(vx)), col=3, pch=16, cex = 1.5)
+# points(rep(vx,6), rep( 1: 6, each=length(vx)), col=4, pch=16, cex = 1.5)
+# 
+points(xv, rep(25, length(xv)), col=1, pch=16, cex = 1.5)
+# points(xv, rep(18, length(xv)), col=2, pch=16, cex = 1.5)
+points(xv, rep(11, length(xv)), col=3, pch=16, cex = 1.5)
+# points(xv, rep( 4, length(xv)), col=4, pch=16, cex = 1.5)
+
+```
+
+- One of each accession for mapping
+- Sequencing underway for Adal and Rathke
+
+## Intensive sample
+
+```{r exp-setup-4}
+par(mar=c(4,1,0,0))
+plot(x = c(0, 200), y = c(0, 27),
+     type = 'n',
+     xlab="Accession",
+     ylab="",
+     axes=F)
+axis(1)
+
+text(-5, c(4,11,18,25), c("S1", "S2", "N1", "N2"), adj = c(1), xpd=NA, col=4:1)
+
+# 1, 8, 15, 22
+# 6, 13, 20, 27
+xv <- seq(1,200,3)
+points(rep(xv,6), rep(22:27, each = length(xv)), col=1, cex=0.7)
+points(rep(xv,6), rep(15:20, each = length(xv)), col=2, cex=0.7)
+points(rep(xv,6), rep( 8:13, each = length(xv)), col=3, cex=0.7)
+points(rep(xv,6), rep( 1: 6, each = length(xv)), col=4, cex=0.7)
+
+vx <- sample(xv, 12, replace=12)
+points(rep(vx,6), rep(22:27, each=length(vx)), col=1, pch=16, cex = 1.5)
+points(rep(vx,6), rep(15:20, each=length(vx)), col=2, pch=16, cex = 1.5)
+points(rep(vx,6), rep( 8:13, each=length(vx)), col=3, pch=16, cex = 1.5)
+points(rep(vx,6), rep( 1: 6, each=length(vx)), col=4, pch=16, cex = 1.5)
+
+```
+
+- All (=2-6) replicates of 12 accessions at each site
+- Partition variance into G, E, and GxE
+
+## Batch effects tho
+
+```{r rahul-batch-effects, out.width="70%"}
+dd <- paste(getwd(), 
+            "007.presentations/210722_lab_meeting/figures/rahul_batch_effects.png",
+            sep = "/"
+)
+knitr::include_graphics(dd)
+```
+
+- Rahul: one plate misbehaves for CHH, but not CG
+- Growth, harvest and sequencing are colinear
+
+# Batch effects in the common-garden data
+
+## My data
+
+- Plates 144, 145:
+  - Intensive sample
+  - Replicate genotypes
+  - 12 genotypes
+  - 4 sites
+
+## My data
+
+- Plates 144, 145:
+  - Intensive sample
+  - Replicate genotypes
+  - 12 genotypes
+  - 4 sites
+- Plates 167, 168, 169, (170, 171):
+  - Extensive (GWAS) panel
+  - 200 accessions
+  - 1 replicate each
+  - 2 sites
+
+## My data
+
+- Plates **144, 145**:
+  - Intensive sample
+  - Replicate genotypes
+  - 12 genotypes
+  - 4 sites
+- Plates **167**, 168, 169, (170, 171):
+  - Extensive (GWAS) panel
+  - 200 accessions
+  - 1 replicate each
+  - 2 sites
+
+## Not obvious from boxplots
+
+```{r plate-boxplots}
+mC$genome_wide %>%
+  select(plate, CG, CHG, CHH) %>%
+  pivot_longer(CG:CHH) %>%
+  ggplot(aes(x = plate, y = value)) +
+  geom_boxplot() +
+  facet_grid(~ name)
+```
+
+- Gross pattern similar across contexts
+
+## Not obvious from boxplots
+
+```{r, ref.label="plate-boxplots"}
+
+```
+
+- 144 vs 145 for CG
+
+## Not obvious from boxplots
+
+```{r, ref.label="plate-boxplots"}
+
+```
+
+- Skew for 167
+
+## Plate effect: CHH-CHG covariance
+
+```{r}
+rbind(
+  intensive$genome_wide, 
+  intensive$CMT2,
+  intensive$RdDM
+) %>% 
+  ggplot(aes(x = CHH, y = CHG, colour=plate)) +
+  geom_point() + 
+  stat_smooth(method = lm, se=FALSE) +
+  facet_grid(~ type, scales=("free"))
+
+```
+
+- CHG and CHH behave like phenotypes
+
+## Plate effect even on CG
+
+```{r}
+rbind(
+  intensive$genome_wide, 
+  intensive$CMT2,
+  intensive$RdDM
+) %>% 
+  ggplot(aes(x = CHH, y = CG, colour=plate)) +
+  geom_point() + 
+  stat_smooth(method = lm, se=FALSE) +
+  facet_grid(~ type, scales=("free"))
+
+```
+
+## Plates well mixed by site
+
+```{r, fig.height=20/2.54}
+
+rbind(
+  intensive$genome_wide, 
+  intensive$CMT2,
+  intensive$RdDM
+) %>% 
+  ggplot(aes(x = CHH, y = CG, colour=site)) +
+  geom_point() + 
+  stat_smooth(method = lm, se=FALSE) +
+  facet_grid(~ type, scales=("free"))
+```
+
+## Plates well mixed by genotype
+
+```{r}
+rbind(
+  intensive$genome_wide,
+  intensive$CMT2,
+  intensive$RdDM
+) %>%
+  ggplot(aes(x = CHH, y = CG, colour=genotype)) +
+  geom_point() +
+  stat_smooth(method = lm, se=FALSE) +
+  facet_grid(~ type, scales=("free"))
+```
+
+- (mostly: they are unbalanced)
+
+## Plate explains CG
+
+```{r PCA}
+# Add values for positive and negative principle components
+for(seq in names(intensive)){
+  pca <- intensive[[seq]] %>% 
+    select(CHH_scaled, CHG_scaled) %>%
+    as.matrix() %>%
+    prcomp(retx=TRUE)
+  intensive[[seq]] <- cbind(intensive[[seq]], pca$x)
+}
+```
+
+
+```{r fit-variance-decomposition}
+
+# For each data.frame in mC fit a mixed effects model for each sequence context
+# using site, genotype, genotype by site, plate and coverage.
+# Variance components are normalised by the sum of variance components, which
+# ignores variance due to variation in sequence coverage
+
+varcomp <- vector('list', length(mC))
+names(varcomp) <- names(mC)
+
+for(i in names(mC)){
+  
+  context <- c("CG_scaled", "CHH_scaled", "CHG_scaled", "PC1", "PC2")
+  
+  this_vc <- vector('list', length(context))
+  names(this_vc) <- context
+  # Fit model for each sequence context
+  for ( c in context ){
+    
+    frm <- as.formula(
+      paste(
+        c, " ~ (1|genotype) + (1|site) + (1| genotype:site) + (1 | plate) + coverage"
+        # c, " ~ (1|genotype) + (1|site) + (1| genotype:site) + coverage"
+      )
+    )
+    
+    m <- lmer(frm, data = intensive[[i]])
+    
+    vars <- as.data.frame(VarCorr(m))$vcov
+    this_vc[[c]] <- data.frame(
+      sequence  = i,
+      context   = c,
+      component = as.data.frame(VarCorr(m))$grp,
+      explained = vars / sum(vars)
+    )
+    
+  }
+  varcomp[[i]] <- do.call('rbind', this_vc)
+  
+}
+
+# Reorder factor levels so they plot nicely
+varcomp <- do.call('rbind', varcomp) %>% 
+  mutate(component = fct_relevel(component, 
+                                 "genotype", "site", "genotype:site", "plate", "Residual")
+         # "genotype", "site", "genotype:site", "Residual")
+  )
+
+```
+
+```{r var-partition-CG}
+varcomp %>% 
+  filter(
+    sequence %in% c("genome_wide", "CMT2", "RdDM"),
+    context == "CG_scaled"
+  ) %>%
+  ggplot(aes(x = component, y = explained, colour = component)) + 
+  geom_point() +
+  facet_grid(~sequence) + 
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)
+  ) +
+  labs(
+    y = "Variance mCG explained",
+    x = "Variance component"
+  )
+
+```
+
+- Partition variance in CG
+- Across the genome, and at CMT2- and RdDM targetted TEs
+
+## Plate explains CG
+
+```{r, ref.label="var-partition-CG"}
+
+```
+
+- H^2^ ~ 0.1
+- Strong plate effect, tons of noise
+
+## Plate explains CG
+
+```{r, ref.label="var-partition-CG"}
+
+```
+
+- CG should be stable!
+
+## Plate affects everything
+
+```{r}
+varcomp %>% 
+  filter(
+    sequence %in% c("genome_wide", "CMT2", "RdDM"),
+    context %in% c("CG_scaled", "CHG_scaled", "CHH_scaled")
+  ) %>%
+  ggplot(aes(x = component, y = explained, colour = component)) + 
+  geom_point() +
+  facet_grid(sequence ~ context) + 
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)
+  ) +
+  labs(
+    y = "Variance mCG explained",
+    x = "Variance component"
+  )
+
+```
+
+- Strong plate and residual error wherever you look
+
+# What drives the plate effects?
+
+## Possible sources of batch effects
+
+1. Microenvironments in the experiment
+2. Tissue sampling
+3. Plate confounded with site/genotype
+4. Tissue plating
+5. Lab processing
+6. Data processing of sequence data
+
+## Microenvironments
+
+```{r microenvironments, fig.width = 10}
+intensive$genome_wide %>% 
+  mutate(tray = substr(tray_position, 1, 2)) %>% 
+  ggplot(aes(x = tray, y = CG, colour = plate)) +
+  # geom_point()
+  geom_boxplot() + 
+  facet_grid(~site)
+```
+
+- Samples are (fairly) even across trays
+- 144 > 145 *within* trays
+
+## Tissue sampling
+
+```{r add-sampling-dates}
+# Ad a column indicating sampling date
+collection_dates <- list(
+  data.frame(sampling_date = '14.10.2012', id =    1:212),
+  data.frame(sampling_date = '15.10.2012', id =  213:421),
+  data.frame(sampling_date = '17.10.2012', id =  422:703),
+  data.frame(sampling_date = '18.10.2012', id =  704:1143),
+  data.frame(sampling_date = '19.10.2012', id = 1144:1670),
+  data.frame(sampling_date = '20.10.2012', id = 1671:2008),
+  data.frame(sampling_date = '06.11.2012', id = 2010:2588),
+  data.frame(sampling_date = '07.11.2012', id = 2589:3164),
+  data.frame(sampling_date = '08.11.2012', id = 3165:3618),
+  data.frame(sampling_date = '09.11.2012', id = 3619:4081)
+) %>% 
+  do.call(what = 'rbind') %>% 
+  mutate(id = as.character(id))
+intensive$genome_wide <- intensive$genome_wide %>% 
+  left_join(collection_dates, by = 'id')
+```
+
+```{r plot-sampling-date}
+intensive$genome_wide %>% 
+  ggplot(aes(x = sampling_date, y = CG, colour = plate)) +
+  geom_boxplot()
+```
+
+- Within each sampling day 144 > 145
+- (Also, correlated with site)
+
+## Confounding by site/genotype
+
+```{r}
+ggarrange(
+  intensive$genome_wide %>% 
+    ggplot(aes(x = site, y = CG, colour=plate)) + 
+    geom_boxplot(),
+  
+  intensive$genome_wide %>% 
+    ggplot(aes(x = genotype, y = CG, colour=plate)) + 
+    geom_boxplot(),
+  ncol=2, common.legend = TRUE)
+
+```
+
+- 144 > 145 within sites and genotypes
+
+## Possible sources of batch effects
+
+1. Microenvironments in the experiment: **No**
+2. Tissue sampling: **No**
+3. Plate confounded with site/genotype: **No**
+4. Tissue plating
+5. Lab processing
+6. Data processing of sequence data
+
+## Possible sources of batch effects
+
+1. ~~Microenvironments in the experiment~~
+2. ~~Tissue sampling~~
+3. ~~Plate confounded with site/genotype~~
+4. Tissue plating
+5. Lab processing
+6. Data processing of sequence data
+
+- Something happened after they came out of the freezer
+
+## Tissue plating 
+
+- Tissue defrosts &rarr; bad things happen
+
+## Tissue plating 
+
+- Tissue defrosts &rarr; bad things happen
+
+- Plate 167 by me
+- Plates 144, 145 before me
+
+## Tissue plating 
+
+- Tissue defrosts &rarr; bad things happen
+
+- Plate 167 by me
+- Plates 144, 145 before me
+
+- Checked the genotypes with SNPmatch
+
+## Lab processing
+
+- Repeat sequencing of what tissue is still available
+- Include technical and biological replicates
+
+## Data processing
+
+- Code variance: Eriko, Rahul and I wrote different scripts to:
+  - Map reads to the reference genome
+  - Calculate mean methylation levels
+  
+## Data processing
+
+- Code variance: Eriko, Rahul and I wrote different scripts to:
+  - Map reads to the reference genome
+  - Calculate mean methylation levels
+- We are checking for differences
+
+```{r}
+# Old data, new script
+old_data <- read_csv(
+  "005.results/004.compare_old_data/output/mean_meth_from_new_script.csv",
+  col_types=cols()
+) %>% 
+  filter(chr_type == "autosomes") %>% 
+  mutate(file  = str_sub(file, 6, -8)) %>% 
+  left_join(mC$genome_wide, by = "file", suffix = c("_oldallc", "_new_allc"))
+
+# Old data, old script
+folder <- "005.results/004.compare_old_data/output/tmp/"
+files <- list.files(folder)
+oldscript <- vector('list', length(files))
+names(oldscript) <- files
+for(f in files){
+  oldscript[[f]] <- read_csv(
+    paste(folder, f,sep=""),
+    col_names = c("file","context", "mean_meth", "methreads", "nreads"),
+    col_types = cols()
+  )
+}
+oldscript <- do.call('rbind', oldscript) %>% 
+  mutate(file  = str_sub(file, 6, -6)) %>% 
+  select(file, context, mean_meth) %>% 
+  pivot_wider(names_from = context, values_from = mean_meth) %>% 
+  left_join(mC$genome_wide, by = "file", suffix = c("_oldscript", "_newscript"))
+
+```
+
+## Mapping reads
+
+```{r}
+# Compare old allc vs new allc files
+# Use the new script
+# There are differences between files, presuambly due to mapping pipeline
+
+old_data %>% 
+  ggplot(aes(x = CG_oldallc, y = CG_new_allc, colour= plate)) + 
+  geom_point() +
+  geom_abline(slope = 1, intercept = 0) +
+  labs(
+    x= "CG - Old mapping pipeline",
+    y = "CG- Updated mapping pipeline"
+  )
+```
+
+- We changed settings for mapping reads
+- Correlation > 0.99
+
+## Calculating average methylation
+
+```{r, ref.label="var-partition-CG"}
+
+```
+
+- Genome-wide: my script
+- TEs: Eriko's script
+
+## Possible sources of batch effects
+
+1. ~~Microenvironments in the experiment~~
+2. ~~Tissue sampling~~
+3. ~~Plate confounded with site/genotype~~
+4. Tissue plating
+5. Lab processing
+6. Data processing of sequence data
+
+- Something happened after they came out of the freezer
+
+## Conclusion
+
+- Differences between plates are substantial
+- We don't really know why though
+- Need to include techincal/biological replication
+
+## Conclusion
+
+- Differences between plates are substantial
+- We don't really know why though
+- Need to include technical/biological replication
+- Good chance these data are garbage

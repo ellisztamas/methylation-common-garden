@@ -268,10 +268,6 @@ varcomp %>%
     x = "Variance explained",
     y = "Variance component"
   )
-
-m <- lmer( I(logit(CG)) ~ (1|genotype) + (1|site) + (1| genotype:site) + (1 | plate) + coverage,
-           data = intensive$genome_wide)
-
 ```
 
 This plot shows the same data, but without the values for plate or residual variation so one can compare the biological effects more clearly. The effects of genotype, site and their interaction are clearly weak. Again, note that error bars on these values are likely to be large.
